@@ -4,8 +4,10 @@ import bottle
 from bottle import get, post, static_file, request, route, template
 from bottle import SimpleTemplate
 from configparser import ConfigParser
-from ldap3 import Connection, Server
+from ldap3 import Connection, Server, AUTO_BIND_TLS_BEFORE_BIND
 from ldap3 import SIMPLE, SUBTREE
+from ldap3 import Tls
+import ssl
 from ldap3.core.exceptions import LDAPBindError, LDAPConstraintViolationResult, \
     LDAPInvalidCredentialsResult, LDAPUserNameIsMandatoryError, \
     LDAPSocketOpenError, LDAPExceptionError
@@ -13,6 +15,9 @@ import logging
 import os
 from os import environ, path
 
+# logging.basicConfig(level=logging.DEBUG)
+# from ldap3.utils.log import set_library_log_detail_level, OFF, BASIC, NETWORK, EXTENDED
+# set_library_log_detail_level(BASIC)
 
 BASE_DIR = path.dirname(__file__)
 LOG = logging.getLogger(__name__)
@@ -59,12 +64,15 @@ def index_tpl(**kwargs):
 
 
 def connect_ldap(**kwargs):
+    tls_configuration = Tls(validate=ssl.CERT_NONE, version=ssl.PROTOCOL_TLSv1_2)
+
     server = Server(host=CONF['ldap']['host'],
                     port=CONF['ldap'].getint('port', None),
-                    use_ssl=CONF['ldap'].getboolean('use_ssl', False),
-                    connect_timeout=5)
 
-    return Connection(server, raise_exceptions=True, **kwargs)
+                    use_ssl=CONF['ldap'].getboolean('use_ssl', False),
+                    tls=tls_configuration,
+                    connect_timeout=5)
+    return Connection(server, raise_exceptions=True, auto_bind=AUTO_BIND_TLS_BEFORE_BIND, **kwargs)
 
 
 def change_password(*args):
