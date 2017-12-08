@@ -1,0 +1,7 @@
+Dockerfile
+.*
+
+LICENSE
+
+*.adoc
+doc
